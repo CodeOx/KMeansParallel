@@ -3,10 +3,11 @@
 #include <unordered_set>
 #include <random>
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
-#define MAX_ITERATIONS 1000000
+#define MAX_ITERATIONS 10000
 #define DIMENSION 3
 #define MAX_DIST 1000000000.0
 #define CHANGE_THRESHOLD 2
@@ -36,6 +37,9 @@ std::unordered_set<int> choose_random(int N, int K, std::mt19937& gen)
 
 // initializes the data_point_cluster and centroids
 void initialize(int N, int K, int * data_points, int** data_point_cluster, int** centroids){
+	*data_point_cluster = (int *)malloc(sizeof(int)*N*4);
+	*centroids = (int *)malloc(sizeof(int)*K*3*MAX_ITERATIONS);
+
 	// initialize data_point_cluster
 	for(int i = 0; i < N; i++){
 		data_point_cluster[0][i*4 + 0] = data_points[i*3 + 0];
@@ -82,6 +86,7 @@ void kmeans_sequential(int N, int K, int* data_points, int** data_point_cluster,
 	initialize(N, K, data_points, data_point_cluster, centroids);
 
 	while(iterations < MAX_ITERATIONS){
+		cluster_changes = 0;
 		//intitalize points in each cluster to 0;
 		//initialize centroid in this iteration
 		for(int i = 0; i < K; i++){
@@ -93,7 +98,7 @@ void kmeans_sequential(int N, int K, int* data_points, int** data_point_cluster,
 
 		//assigning clusters to all points
 		for(int i = 0; i < N; i++){
-			int cluster = assign_centroid(K, &data_points[i*3 + 0], &centroids[0][iterations*K*3]);
+			int cluster = assign_centroid(K, &data_points[i*3 + 0], &centroids[0][(iterations-1)*K*3]);
 			if(data_point_cluster[0][i*4 + 3] != cluster){
 				cluster_changes++;
 			}
@@ -109,6 +114,9 @@ void kmeans_sequential(int N, int K, int* data_points, int** data_point_cluster,
 			centroids[0][iterations*K*3 + cluster*3 + 2] += data_point_cluster[0][i*4 + 2];
 		}
 		for(int i = 0; i < K; i++){
+			if(points_in_cluster[i] <= 0){
+				cout << "Error: points in cluster " << i << " less than 0\n";
+			}
 			centroids[0][iterations*K*3 + i*3 + 0] /= points_in_cluster[i];
 			centroids[0][iterations*K*3 + i*3 + 1] /= points_in_cluster[i];
 			centroids[0][iterations*K*3 + i*3 + 2] /= points_in_cluster[i];	
@@ -122,4 +130,5 @@ void kmeans_sequential(int N, int K, int* data_points, int** data_point_cluster,
 
 	}
 	*num_iterations = iterations-1;
+	cout << iterations-1 << "\n";
 }

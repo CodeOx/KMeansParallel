@@ -34,7 +34,7 @@ int main(int argc, char const *argv[])
 	int num_iterations;    //no of iterations performed by algo (to be computed)
 	//---------------------------------------------------------------------
 
-	clock_t start_time, end_time;
+	double start_time, end_time;
 	double computation_time;
 
 	K = atoi(argv[1]);

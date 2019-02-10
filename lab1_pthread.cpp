@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <pthread.h>
+#include <stdint.h>
 
 using namespace std;
 
@@ -90,8 +91,8 @@ int assign_centroid(int K, int* x, int* centroids){
 }
 
 void* assgin_cluster(void *tid){
-	int* id = (int*)tid;
-	for(int i = *id*(N_gl/num_threads_gl); i < *id + N_gl/num_threads_gl; i++){
+	int id = (intptr_t)tid;
+	for(int i = id*(N_gl/num_threads_gl); i < id + N_gl/num_threads_gl; i++){
 		int cluster = assign_centroid(K_gl, &data_points_gl[i*3 + 0], &centroids_gl[0][(iterations-1)*K_gl*3]);
 		if(data_point_cluster_gl[0][i*4 + 3] != cluster){
 			pthread_mutex_lock(&lock1);
@@ -128,8 +129,9 @@ void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_
 		}
 
 		//assigning clusters to all points
-		for(int i=0; i < num_threads; i++){
-			pthread_create(&kmeans_thr[i], NULL, assgin_cluster, (void *)i);
+		int t;
+		for(t=0; t < num_threads; t++){
+			pthread_create(&kmeans_thr[t], NULL, assgin_cluster, (void *)(intptr_t)t);
 		}
 		for(int i=0; i < num_threads; i++){
 			pthread_join(kmeans_thr[i], NULL);

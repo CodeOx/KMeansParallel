@@ -64,7 +64,6 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 		centroids[0][i*3 + 1] = data_points[points[i]*3 + 1];
 		centroids[0][i*3 + 2] = data_points[points[i]*3 + 2];
 	}
-	cout << centroids[0][0] << "\n";
 }
 
 int assign_centroid(int K, int* x, int* centroids){
@@ -141,5 +140,5 @@ void kmeans_omp(int num_threads, int N, int K, int* data_points, int** data_poin
 
 	}
 	*num_iterations = iterations-1;
-	cout << iterations-1 << "\n";
+	cout << num_threads << ":" << N << ":" << K << ":" << iterations-1 << ":";
 }

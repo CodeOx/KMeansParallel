@@ -75,22 +75,6 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 	}
 }
 
-void* assgin_cluster(void *tid){
-	int id = (int)tid;
-	for(int i = id*(N_gl/num_threads_gl); i < id + N_gl/num_threads_gl; i++){
-		int cluster = assign_centroid(K_gl, &data_points_gl[i*3 + 0], &centroids_gl[0][(iterations-1)*K_gl*3]);
-		if(data_point_cluster_gl[0][i*4 + 3] != cluster){
-			pthread_mutex_lock(&lock1);
-			cluster_changes++;
-			pthread_mutex_unlock(&lock1);
-		}
-		data_point_cluster[0][i*4 + 3] = cluster;
-		pthread_mutex_lock(&lock2);
-		points_in_cluster[cluster]++;
-		pthread_mutex_unlock(&lock2);
-	}
-}
-
 int assign_centroid(int K, int* x, int* centroids){
 	double min_dist = MAX_DIST;
 	int cluster = 0;
@@ -105,13 +89,29 @@ int assign_centroid(int K, int* x, int* centroids){
 	return cluster;
 }
 
+void* assgin_cluster(void *tid){
+	int* id = (int*)tid;
+	for(int i = *id*(N_gl/num_threads_gl); i < *id + N_gl/num_threads_gl; i++){
+		int cluster = assign_centroid(K_gl, &data_points_gl[i*3 + 0], &centroids_gl[0][(iterations-1)*K_gl*3]);
+		if(data_point_cluster_gl[0][i*4 + 3] != cluster){
+			pthread_mutex_lock(&lock1);
+			cluster_changes++;
+			pthread_mutex_unlock(&lock1);
+		}
+		data_point_cluster_gl[0][i*4 + 3] = cluster;
+		pthread_mutex_lock(&lock2);
+		points_in_cluster[cluster]++;
+		pthread_mutex_unlock(&lock2);
+	}
+}
+
 void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
 	pthread_t kmeans_thr[num_threads];
 	pthread_mutex_init(&lock1, NULL);
 	pthread_mutex_init(&lock2, NULL);
 
 	iterations = 1;
-	points_in_cluster = (int)malloc(sizeof(int)*K);
+	points_in_cluster = (int*)malloc(sizeof(int)*K);
 	cluster_changes = 0;
 	initialize(N, K, data_points, data_point_cluster, centroids);
 	num_threads_gl = num_threads; N_gl = N; K_gl = K; data_points_gl = data_points; data_point_cluster_gl = data_point_cluster; centroids_gl = centroids;

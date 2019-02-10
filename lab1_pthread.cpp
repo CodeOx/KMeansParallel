@@ -13,6 +13,15 @@ using namespace std;
 #define MAX_DIST 1000000000.0
 #define CHANGE_THRESHOLD 2
 
+/********** global variables ************/
+pthread_mutex_t lock1,lock2;
+int N_gl; int K_gl; int* data_points_gl; int** data_point_cluster_gl; int** centroids_gl;
+int iterations;
+int* points_in_cluster;
+int cluster_changes;
+int num_threads_gl;
+/****************************************/
+
 // measures distance between points x and y
 // d : dimension
 double distance(int* x, int* y, int d=DIMENSION){
@@ -66,6 +75,22 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 	}
 }
 
+void* assgin_cluster(void *tid){
+	int id = (int)tid;
+	for(int i = id*(N_gl/num_threads_gl); i < id + N_gl/num_threads_gl; i++){
+		int cluster = assign_centroid(K_gl, &data_points_gl[i*3 + 0], &centroids_gl[0][(iterations-1)*K_gl*3]);
+		if(data_point_cluster_gl[0][i*4 + 3] != cluster){
+			pthread_mutex_lock(&lock1);
+			cluster_changes++;
+			pthread_mutex_unlock(&lock1);
+		}
+		data_point_cluster[0][i*4 + 3] = cluster;
+		pthread_mutex_lock(&lock2);
+		points_in_cluster[cluster]++;
+		pthread_mutex_unlock(&lock2);
+	}
+}
+
 int assign_centroid(int K, int* x, int* centroids){
 	double min_dist = MAX_DIST;
 	int cluster = 0;
@@ -82,11 +107,14 @@ int assign_centroid(int K, int* x, int* centroids){
 
 void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
 	pthread_t kmeans_thr[num_threads];
+	pthread_mutex_init(&lock1, NULL);
+	pthread_mutex_init(&lock2, NULL);
 
-	int iterations = 1;
-	int points_in_cluster[K];
-	int cluster_changes = 0;
+	iterations = 1;
+	points_in_cluster = (int)malloc(sizeof(int)*K);
+	cluster_changes = 0;
 	initialize(N, K, data_points, data_point_cluster, centroids);
+	num_threads_gl = num_threads; N_gl = N; K_gl = K; data_points_gl = data_points; data_point_cluster_gl = data_point_cluster; centroids_gl = centroids;
 
 	while(iterations < MAX_ITERATIONS){
 		cluster_changes = 0;
@@ -100,13 +128,11 @@ void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_
 		}
 
 		//assigning clusters to all points
-		for(int i = 0; i < N; i++){
-			int cluster = assign_centroid(K, &data_points[i*3 + 0], &centroids[0][(iterations-1)*K*3]);
-			if(data_point_cluster[0][i*4 + 3] != cluster){
-				cluster_changes++;
-			}
-			data_point_cluster[0][i*4 + 3] = cluster;
-			points_in_cluster[cluster]++;
+		for(int i=0; i < num_threads; i++){
+			pthread_create(&kmeans_thr[i], NULL, assgin_cluster, (void *)i);
+		}
+		for(int i=0; i < num_threads; i++){
+			pthread_join(kmeans_thr[i], NULL);
 		}
 
 		//recomputing centroids for each cluster

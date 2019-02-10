@@ -51,7 +51,7 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 	//intitalize centroids using forgy method
 	//choosing k points at random
 	std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen(1234);
 
     unordered_set<int> elems = choose_random(N, K, gen);
 
@@ -63,6 +63,7 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 		centroids[0][i*3 + 1] = data_points[points[i]*3 + 1];
 		centroids[0][i*3 + 2] = data_points[points[i]*3 + 2];
 	}
+	cout << centroids[0][0] << "\n";
 }
 
 int assign_centroid(int K, int* x, int* centroids){

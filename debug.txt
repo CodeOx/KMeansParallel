@@ -1,0 +1,1 @@
+/mnt/c/Users/HP/Documents/iit_acad/col333/A2/server/Yinsh-AI/run.sh: line 4: ./runner: No such file or directory

@@ -16,7 +16,7 @@ using namespace std;
 
 /********** global variables ************/
 pthread_mutex_t lock1,lock2;
-int N_gl; int K_gl; int* data_points_gl; int** data_point_cluster_gl; int** centroids_gl;
+int N_gl; int K_gl; int* data_points_gl; int** data_point_cluster_gl; float** centroids_gl;
 int iterations;
 int* points_in_cluster;
 int cluster_changes;
@@ -25,10 +25,10 @@ int num_threads_gl;
 
 // measures distance between points x and y
 // d : dimension
-double distance(int* x, int* y, int d=DIMENSION){
+double distance(int* x, float* y, int d=DIMENSION){
 	double s = 0;
 	for(int i = 0; i < d; i++){
-		s += pow(x[i] - y[i],2);
+		s += pow(float(x[i]) - y[i],2);
 	}
 	return pow(s,0.5);
 }
@@ -47,9 +47,9 @@ std::unordered_set<int> choose_random(int N, int K, std::mt19937& gen)
 }
 
 // initializes the data_point_cluster and centroids
-void initialize(int N, int K, int * data_points, int** data_point_cluster, int** centroids){
+void initialize(int N, int K, int * data_points, int** data_point_cluster, float** centroids){
 	*data_point_cluster = (int *)malloc(sizeof(int)*N*4);
-	*centroids = (int *)malloc(sizeof(int)*K*3*MAX_ITERATIONS);
+	*centroids = (float *)malloc(sizeof(float)*K*3*MAX_ITERATIONS);
 
 	// initialize data_point_cluster
 	for(int i = 0; i < N; i++){
@@ -76,7 +76,7 @@ void initialize(int N, int K, int * data_points, int** data_point_cluster, int**
 	}
 }
 
-int assign_centroid(int K, int* x, int* centroids){
+int assign_centroid(int K, int* x, float* centroids){
 	double min_dist = MAX_DIST;
 	int cluster = 0;
 	double dist;
@@ -107,7 +107,7 @@ void* assgin_cluster(void *tid){
 	pthread_exit(NULL);
 }
 
-void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
+void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_point_cluster, float** centroids, int* num_iterations){
 	pthread_t kmeans_thr[num_threads];
 	pthread_mutex_init(&lock1, NULL);
 	pthread_mutex_init(&lock2, NULL);

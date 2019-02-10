@@ -80,7 +80,7 @@ int assign_centroid(int K, int* x, int* centroids){
 	return cluster;
 }
 
-void kmeans_sequential(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
+void kmeans_omp(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
 	int iterations = 1;
 	int points_in_cluster[K];
 	int cluster_changes = 0;
@@ -104,7 +104,7 @@ void kmeans_sequential(int num_threads, int N, int K, int* data_points, int** da
 		{
 			int tid = omp_get_thread_num();
 		#pragma omp for
-			for(int i 0; i < N; i++){
+			for(int i=0; i < N; i++){
 				int cluster = assign_centroid(K, &data_points[i*3 + 0], &centroids[0][(iterations-1)*K*3]);
 				if(data_point_cluster[0][i*4 + 3] != cluster){
 		#pragma omp atomic 

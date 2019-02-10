@@ -92,7 +92,7 @@ int assign_centroid(int K, int* x, int* centroids){
 
 void* assgin_cluster(void *tid){
 	int id = (intptr_t)tid;
-	for(int i = id*(N_gl/num_threads_gl); i < id + N_gl/num_threads_gl; i++){
+	for(int i = id*(N_gl/num_threads_gl); i < (id+1)*(N_gl/num_threads_gl); i++){
 		int cluster = assign_centroid(K_gl, &data_points_gl[i*3 + 0], &centroids_gl[0][(iterations-1)*K_gl*3]);
 		if(data_point_cluster_gl[0][i*4 + 3] != cluster){
 			pthread_mutex_lock(&lock1);
@@ -104,6 +104,7 @@ void* assgin_cluster(void *tid){
 		points_in_cluster[cluster]++;
 		pthread_mutex_unlock(&lock2);
 	}
+	pthread_exit(NULL);
 }
 
 void kmeans_pthread(int num_threads, int N, int K, int* data_points, int** data_point_cluster, int** centroids, int* num_iterations){
